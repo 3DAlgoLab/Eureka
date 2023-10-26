@@ -367,7 +367,7 @@ class ShadowHandGPT(VecTask):
         self.goal_object_indices = to_torch(self.goal_object_indices, dtype=torch.long, device=self.device)
 
     def compute_reward(self, actions):
-        self.rew_buf[:], self.rew_dict = compute_reward(self.object_rot, self.goal_rot, self.fingertip_pos, self.object_pos)
+        self.rew_buf[:], self.rew_dict = compute_reward(self.object_rot, self.goal_rot, self.fingertip_state, self.spin_reward_temp)
         self.extras['gpt_reward'] = self.rew_buf.mean()
         for rew_state in self.rew_dict: self.extras[rew_state] = self.rew_dict[rew_state].mean()
         self.rew_buf[:] = compute_bonus(
@@ -763,32 +763,33 @@ import math
 import torch
 from torch import Tensor
 @torch.jit.script
-def compute_reward(object_rot: torch.Tensor, goal_rot: torch.Tensor, fingertip_pos: torch.Tensor, object_pos: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-    device = object_rot.device
+def compute_reward(object_rot: Tensor, goal_rot: Tensor, fingertip_state: Tensor, spin_reward_temp: float = 1.0) -> Tuple[Tensor, Dict[str, Tensor]]:
+    # Calculate the angular distance between the current object rotation and the goal rotation
+    object_rot_inv = torch.inverse(object_rot)
+    angular_distance = torch.matmul(goal_rot, object_rot_inv)
     
-    # Distance between object rotation and goal rotation
-    object_goal_rot_diff = torch.norm(object_rot - goal_rot, dim=1)
+    # Compute the rotation error
+    trace = torch.diagonal(angular_distance, offset=0, dim1=-1, dim2=-2).sum(dim=-1)
+    rotation_error = torch.abs(1.0 - trace) / 4.0
     
-    # Distance between each fingertip and the object
-    fingertip_object_diff = torch.norm(fingertip_pos - object_pos.unsqueeze(1), dim=2)
-    avg_fingertip_object_diff = fingertip_object_diff.mean(dim=1)
+    # Scale the spin reward
+    scaled_rotation_error = torch.exp(-spin_reward_temp * rotation_error)
     
-    # Reward Components
-    rot_reward = -object_goal_rot_diff
-    fingertip_reward = -avg_fingertip_object_diff
+    # Compute the fingertip-object distance
+    fingertip_pos = fingertip_state[:, :, 0:3]
+    object_pos = torch.mean(fingertip_pos, dim=1)
     
-    # Temperature parameters for reward normalization
-    rot_temperature = torch.tensor(1.0).to(device)
-    fingertip_temperature = torch.tensor(1.0).to(device)
+    fingertip_object_distance = torch.norm(fingertip_pos - object_pos[:, None], dim=-1)
+    avg_fingertip_object_distance = torch.mean(fingertip_object_distance, dim=-1)
     
-    # Normalize reward components using exponential function
-    rot_reward_normalized = torch.exp(rot_reward / rot_temperature)
-    fingertip_reward_normalized = torch.exp(fingertip_reward / fingertip_temperature)
+    # Compute the distance reward
+    distance_reward_temp = 1.0
+    distance_reward = torch.exp(-distance_reward_temp * avg_fingertip_object_distance)
     
-    # Combine normalized rewards
-    total_reward = rot_reward_normalized + fingertip_reward_normalized
+    # Compute the total reward
+    total_reward = distance_reward * scaled_rotation_error
     
-    # Store individual reward components in a dictionary
-    reward_dict = {"rot_reward": rot_reward_normalized, "fingertip_reward": fingertip_reward_normalized}
+    # Store the reward components in a dictionary
+    reward_components = {'scaled_rotation_error': scaled_rotation_error, 'distance_reward': distance_reward}
     
-    return total_reward, reward_dict
+    return total_reward, reward_components
