@@ -13,9 +13,13 @@ import numpy as np
 import openai
 from dotenv import load_dotenv
 from utils.create_task import create_task
-from utils.extract_task_code import *
-from utils.file_utils import find_files_with_substring, load_tensorboard_logs
-from utils.misc import *
+
+# from utils.extract_task_code import *
+from utils.extract_task_code import file_to_string, get_function_signature
+from utils.file_utils import load_tensorboard_logs
+from utils.misc import block_until_training, filter_traceback, set_freest_gpu
+
+# from utils.misc import *
 
 load_dotenv()
 
@@ -47,7 +51,7 @@ def main(cfg):
     )
     task_file = f"{EUREKA_ROOT_DIR}/envs/{env_parent}/{env_name}.py"
     task_obs_file = f"{EUREKA_ROOT_DIR}/envs/{env_parent}/{env_name}_obs.py"
-    shutil.copy(task_obs_file, f"env_init_obs.py")
+    shutil.copy(task_obs_file, "env_init_obs.py")
     task_code_string = file_to_string(task_file)
     task_obs_code_string = file_to_string(task_obs_file)
     output_file = f"{ISAAC_ROOT_DIR}/tasks/{env_name}{suffix.lower()}.py"
@@ -104,6 +108,7 @@ def main(cfg):
             f"Iteration {iter}: Generating {cfg.sample} samples with {cfg.model}"
         )
 
+        prompt_tokens = ""
         while True:
             if total_samples >= cfg.sample:
                 break
@@ -146,6 +151,7 @@ def main(cfg):
 
         code_runs = []
         rl_runs = []
+        code_string = None
         for response_id in range(cfg.sample):
             response_cur = responses[response_id]["message"]["content"]
             logging.info(f"Iteration {iter}: Processing Code Run {response_id}")
@@ -176,7 +182,7 @@ def main(cfg):
                 gpt_reward_signature, input_lst = get_function_signature(
                     code_string
                 )
-            except Exception as e:
+            except Exception:
                 logging.info(
                     f"Iteration {iter}: Code Run {response_id} cannot parse function signature!"
                 )
@@ -185,8 +191,8 @@ def main(cfg):
             code_runs.append(code_string)
             reward_signature = [
                 f"self.rew_buf[:], self.rew_dict = {gpt_reward_signature}",
-                f"self.extras['gpt_reward'] = self.rew_buf.mean()",
-                f"for rew_state in self.rew_dict: self.extras[rew_state] = self.rew_dict[rew_state].mean()",
+                "self.extras['gpt_reward'] = self.rew_buf.mean()",
+                "for rew_state in self.rew_dict: self.extras[rew_state] = self.rew_dict[rew_state].mean()",
             ]
             indent = " " * 8
             reward_signature = "\n".join(
@@ -273,7 +279,7 @@ def main(cfg):
             try:
                 with open(rl_filepath, "r") as f:
                     stdout_str = f.read()
-            except:
+            except Exception:
                 content = execution_error_feedback.format(
                     traceback_msg="Code Run cannot be executed due to function signature error! Please re-write an entirely new reward function!"
                 )
@@ -290,6 +296,7 @@ def main(cfg):
                 # If RL execution has no error, provide policy statistics feedback
                 exec_success = True
                 lines = stdout_str.split("\n")
+                line = None
                 for i, line in enumerate(lines):
                     if line.startswith("Tensorboard Directory:"):
                         break
@@ -488,6 +495,7 @@ def main(cfg):
         with open(rl_filepath, "r") as f:
             stdout_str = f.read()
         lines = stdout_str.split("\n")
+        line = None
         for i, line in enumerate(lines):
             if line.startswith("Tensorboard Directory:"):
                 break

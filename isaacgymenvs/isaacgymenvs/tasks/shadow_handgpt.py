@@ -367,7 +367,7 @@ class ShadowHandGPT(VecTask):
         self.goal_object_indices = to_torch(self.goal_object_indices, dtype=torch.long, device=self.device)
 
     def compute_reward(self, actions):
-        self.rew_buf[:], self.rew_dict = compute_reward(self.object_rot, self.goal_rot, self.fingertip_state, self.spin_reward_temp)
+        self.rew_buf[:], self.rew_dict = compute_reward(self.object_rot, self.goal_rot)
         self.extras['gpt_reward'] = self.rew_buf.mean()
         for rew_state in self.rew_dict: self.extras[rew_state] = self.rew_dict[rew_state].mean()
         self.rew_buf[:] = compute_bonus(
@@ -763,33 +763,22 @@ import math
 import torch
 from torch import Tensor
 @torch.jit.script
-def compute_reward(object_rot: Tensor, goal_rot: Tensor, fingertip_state: Tensor, spin_reward_temp: float = 1.0) -> Tuple[Tensor, Dict[str, Tensor]]:
-    # Calculate the angular distance between the current object rotation and the goal rotation
-    object_rot_inv = torch.inverse(object_rot)
-    angular_distance = torch.matmul(goal_rot, object_rot_inv)
+def compute_reward(object_rot: Tensor, goal_rot: Tensor) -> Tuple[Tensor, Dict[str, Tensor]]:
+    # Calculate the object and goal orientation distance
+    object_rot_inverse = torch.nn.functional.normalize(torch.stack([object_rot[..., 3], -object_rot[..., 0], -object_rot[..., 1], -object_rot[..., 2]], dim=-1))
+    rot_diff = torch.mul(object_rot_inverse.unsqueeze(1), goal_rot.unsqueeze(0))
+    rot_distance = 1.0 - torch.square(rot_diff[..., 0] + rot_diff[..., 1] + rot_diff[..., 2] + rot_diff[..., 3])/4.0
     
-    # Compute the rotation error
-    trace = torch.diagonal(angular_distance, offset=0, dim1=-1, dim2=-2).sum(dim=-1)
-    rotation_error = torch.abs(1.0 - trace) / 4.0
+    # Define the temperature parameters
+    temp_rot = torch.tensor(50, dtype=torch.float32).to(rot_distance.device)
     
-    # Scale the spin reward
-    scaled_rotation_error = torch.exp(-spin_reward_temp * rotation_error)
+    # Apply exponential transformation to rotation distance component
+    reward_rot = -torch.exp(torch.clamp_min(temp_rot * rot_distance, -10))
     
-    # Compute the fingertip-object distance
-    fingertip_pos = fingertip_state[:, :, 0:3]
-    object_pos = torch.mean(fingertip_pos, dim=1)
+    # Calculate the total reward
+    total_reward = reward_rot
     
-    fingertip_object_distance = torch.norm(fingertip_pos - object_pos[:, None], dim=-1)
-    avg_fingertip_object_distance = torch.mean(fingertip_object_distance, dim=-1)
+    # Store individual reward components in a dictionary
+    reward_dict = {"reward_rot": reward_rot}
     
-    # Compute the distance reward
-    distance_reward_temp = 1.0
-    distance_reward = torch.exp(-distance_reward_temp * avg_fingertip_object_distance)
-    
-    # Compute the total reward
-    total_reward = distance_reward * scaled_rotation_error
-    
-    # Store the reward components in a dictionary
-    reward_components = {'scaled_rotation_error': scaled_rotation_error, 'distance_reward': distance_reward}
-    
-    return total_reward, reward_components
+    return total_reward, reward_dict
