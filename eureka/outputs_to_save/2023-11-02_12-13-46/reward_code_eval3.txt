@@ -1,0 +1,99 @@
+Importing module 'gym_37' (/home/j2y/dev_u/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_37.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/j2y/dev_u/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+PyTorch version 1.13.1
+Device count 1
+/home/j2y/dev_u/isaacgym/python/isaacgym/_bindings/src/gymtorch
+Using /home/j2y/.cache/torch_extensions/py37_cu117 as PyTorch extensions root...
+Emitting ninja build file /home/j2y/.cache/torch_extensions/py37_cu117/gymtorch/build.ninja...
+Building extension module gymtorch...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module gymtorch...
+2023-11-02 16:43:39,883 - INFO - logger - logger initialized
+<unknown>:6: DeprecationWarning: invalid escape sequence \*
+/home/j2y/dev_u/Eureka/eureka/../isaacgymenvs/isaacgymenvs/train.py:75: UserWarning: 
+The version_base parameter is not specified.
+Please specify a compatability version level, or None.
+Will assume defaults for version 1.1
+  @hydra.main(config_name="config", config_path="./cfg")
+/home/j2y/miniconda3/envs/eureka37/lib/python3.7/site-packages/hydra/_internal/defaults_list.py:415: UserWarning: In config: Invalid overriding of hydra/job_logging:
+Default list overrides requires 'override' keyword.
+See https://hydra.cc/docs/1.2/upgrades/1.0_to_1.1/defaults_list_override for more information.
+
+  deprecation_warning(msg)
+/home/j2y/miniconda3/envs/eureka37/lib/python3.7/site-packages/hydra/_internal/hydra.py:127: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  configure_logging=with_log_configuration,
+/home/j2y/miniconda3/envs/eureka37/lib/python3.7/site-packages/torch/utils/tensorboard/__init__.py:5: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+  tensorboard.__version__
+Setting seed: 3
+Network Directory: /home/j2y/dev_u/Eureka/eureka/outputs/eureka/2023-11-02_12-13-46/policy-2023-11-02_16-43-41/runs/ShadowHandGPT-2023-11-02_16-43-41/nn
+Tensorboard Directory: /home/j2y/dev_u/Eureka/eureka/outputs/eureka/2023-11-02_12-13-46/policy-2023-11-02_16-43-41/runs/ShadowHandGPT-2023-11-02_16-43-41/summaries
+self.seed = 3
+Started to train
+Obs type: full_state
+/home/j2y/miniconda3/envs/eureka37/lib/python3.7/site-packages/gym/spaces/box.py:84: UserWarning: [33mWARN: Box bound precision lowered by casting to float32[0m
+  logger.warn(f"Box bound precision lowered by casting to {self.dtype}")
+[Warning] [carb.gym.plugin] useGpu is set, forcing single scene (0 subscenes)
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: enabled
+JointSpec type free not yet supported!
+JointSpec type free not yet supported!
+JointSpec type free not yet supported!
+[Error] [carb.gym.plugin] *** Could not create contact graph to compute collision filters! Are contacts specified properly?
+
+JointSpec type free not yet supported!
+JointSpec type free not yet supported!
+[Error] [carb.gym.plugin] *** Could not create contact graph to compute collision filters! Are contacts specified properly?
+
+[Error] [carb.gym.plugin] Gym cuda error: out of memory: ../../../source/plugins/carb/gym/impl/Gym/GymPhysX.cpp: 1721
+[Error] [carb.gym.plugin] Gym cuda error: invalid resource handle: ../../../source/plugins/carb/gym/impl/Gym/GymPhysX.cpp: 5993
+[Error] [carb.gym.plugin] Gym cuda error: out of memory: ../../../source/plugins/carb/gym/impl/Gym/GymPhysXCuda.cu: 937
+[Error] [carb.gym.plugin] Failed to fill root state tensor
+[Error] [carb.gym.plugin] Gym cuda error: invalid resource handle: ../../../source/plugins/carb/gym/impl/Gym/GymPhysX.cpp: 6137
+[Error] [carb.gym.plugin] Gym cuda error: an illegal memory access was encountered: ../../../source/plugins/carb/gym/impl/Gym/GymPhysXCuda.cu: 991
+[Error] [carb.gym.plugin] Gym cuda error: an illegal memory access was encountered: ../../../source/plugins/carb/gym/impl/Gym/GymPhysX.cpp: 5754
+[Error] [carb.gym.plugin] Gym cuda error: an illegal memory access was encountered: ../../../source/plugins/carb/gym/impl/Gym/GymPhysXCuda.cu: 926
+[Error] [carb.gym.plugin] Failed to fill rigid body state tensor
+Error executing job with overrides: ['task=ShadowHandGPT', 'wandb_activate=False', 'wandb_entity=', 'wandb_project=', 'headless=True', 'capture_video=False', 'force_render=False', 'seed=3']
+Traceback (most recent call last):
+  File "/home/j2y/dev_u/Eureka/eureka/../isaacgymenvs/isaacgymenvs/train.py", line 207, in launch_rlg_hydra
+    'sigma': cfg.sigma if cfg.sigma != '' else None
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/torch_runner.py", line 124, in run
+    self.run_train(args)
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/torch_runner.py", line 98, in run_train
+    self.agent = self.algo_factory.create(self.algo_name, base_name='run', params=self.params)
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/common/object_factory.py", line 15, in create
+    return builder(**kwargs)
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/torch_runner.py", line 37, in <lambda>
+    self.algo_factory.register_builder('a2c_continuous', lambda **kwargs : a2c_continuous.A2CAgent(**kwargs))
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/algos_torch/a2c_continuous.py", line 16, in __init__
+    a2c_common.ContinuousA2CBase.__init__(self, base_name, params)
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/common/a2c_common.py", line 1076, in __init__
+    A2CBase.__init__(self, base_name, params)
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/common/a2c_common.py", line 121, in __init__
+    self.vec_env = vecenv.create_vec_env(self.env_name, self.num_actors, **self.env_config)
+  File "/home/j2y/dev_u/Eureka/rl_games/rl_games/common/vecenv.py", line 222, in create_vec_env
+    return vecenv_config[vec_env_name](config_name, num_actors, **kwargs)
+  File "/home/j2y/dev_u/Eureka/eureka/../isaacgymenvs/isaacgymenvs/train.py", line 161, in <lambda>
+    vecenv.register('RLGPU', lambda config_name, num_actors, **kwargs: RLGPUEnv(config_name, num_actors, **kwargs))
+  File "/home/j2y/dev_u/Eureka/isaacgymenvs/isaacgymenvs/utils/rlgames_utils.py", line 253, in __init__
+    self.env = env_configurations.configurations[config_name]['env_creator'](**kwargs)
+  File "/home/j2y/dev_u/Eureka/eureka/../isaacgymenvs/isaacgymenvs/train.py", line 145, in <lambda>
+    'env_creator': lambda **kwargs: create_isaacgym_env(**kwargs),
+  File "/home/j2y/dev_u/Eureka/eureka/../isaacgymenvs/isaacgymenvs/train.py", line 123, in create_isaacgym_env
+    **kwargs,
+  File "/home/j2y/dev_u/Eureka/isaacgymenvs/isaacgymenvs/__init__.py", line 59, in make
+    return create_rlgpu_env()
+  File "/home/j2y/dev_u/Eureka/isaacgymenvs/isaacgymenvs/utils/rlgames_utils.py", line 128, in create_rlgpu_env
+    force_render=force_render,
+  File "/home/j2y/dev_u/Eureka/isaacgymenvs/isaacgymenvs/tasks/shadow_handgpt.py", line 149, in __init__
+    self.prev_targets = torch.zeros((self.num_envs, self.num_dofs), dtype=torch.float, device=self.device)
+RuntimeError: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

@@ -1,4 +1,9 @@
 {
+  "peacock.color": "#3564b3",
+  "cSpell.words": [
+    "gpustat",
+    "gpustats"
+  ],
   "workbench.colorCustomizations": {
     "activityBar.activeBackground": "#507ecb",
     "activityBar.background": "#507ecb",
@@ -17,10 +22,5 @@
     "titleBar.activeForeground": "#e7e7e7",
     "titleBar.inactiveBackground": "#3564b399",
     "titleBar.inactiveForeground": "#e7e7e799"
-  },
-  "peacock.color": "#3564b3",
-  "cSpell.words": [
-    "gpustat",
-    "gpustats"
-  ]
+  }
 }

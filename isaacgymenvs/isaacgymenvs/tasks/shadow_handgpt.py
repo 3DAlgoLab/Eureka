@@ -367,7 +367,7 @@ class ShadowHandGPT(VecTask):
         self.goal_object_indices = to_torch(self.goal_object_indices, dtype=torch.long, device=self.device)
 
     def compute_reward(self, actions):
-        self.rew_buf[:], self.rew_dict = compute_reward(self.object_rot, self.goal_rot)
+        self.rew_buf[:], self.rew_dict = compute_reward(self.object_rot, self.goal_rot, self.fingertip_pos, self.object_pos)
         self.extras['gpt_reward'] = self.rew_buf.mean()
         for rew_state in self.rew_dict: self.extras[rew_state] = self.rew_dict[rew_state].mean()
         self.rew_buf[:] = compute_bonus(
@@ -763,22 +763,30 @@ import math
 import torch
 from torch import Tensor
 @torch.jit.script
-def compute_reward(object_rot: Tensor, goal_rot: Tensor) -> Tuple[Tensor, Dict[str, Tensor]]:
-    # Calculate the object and goal orientation distance
-    object_rot_inverse = torch.nn.functional.normalize(torch.stack([object_rot[..., 3], -object_rot[..., 0], -object_rot[..., 1], -object_rot[..., 2]], dim=-1))
-    rot_diff = torch.mul(object_rot_inverse.unsqueeze(1), goal_rot.unsqueeze(0))
-    rot_distance = 1.0 - torch.square(rot_diff[..., 0] + rot_diff[..., 1] + rot_diff[..., 2] + rot_diff[..., 3])/4.0
+def compute_reward(object_rot: torch.Tensor, goal_rot: torch.Tensor, fingertip_pos: torch.Tensor, object_pos: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    # Compute quaternion distance between object_rot and goal_rot
+    rot_diff = torch.abs(torch.sum(torch.mul(object_rot, goal_rot), dim=1))
     
-    # Define the temperature parameters
-    temp_rot = torch.tensor(50, dtype=torch.float32).to(rot_distance.device)
+    # Increase the temperature variable and scale the quaternion_reward component
+    quaternion_temperature = 50.0
+    quaternion_reward = torch.exp(-quaternion_temperature * (1 - rot_diff))
     
-    # Apply exponential transformation to rotation distance component
-    reward_rot = -torch.exp(torch.clamp_min(temp_rot * rot_distance, -10))
+    # Calculate the distance between fingertips and object position
+    fingertip_object_distance = torch.norm(fingertip_pos - object_pos.unsqueeze(dim=1), dim=-1)
     
-    # Calculate the total reward
-    total_reward = reward_rot
+    # Encourage the shadow hand to maintain contact with the object:
+    # Increase the temperature variable to improve optimization
+    contact_temperature = 20.0
+    contact_reward_threshold = 0.03
+    contact_reward = torch.exp(-contact_temperature * (fingertip_object_distance - contact_reward_threshold))
+    contact_reward = torch.mean(contact_reward, dim=1)
     
-    # Store individual reward components in a dictionary
-    reward_dict = {"reward_rot": reward_rot}
+    # Combine quaternion reward and contact reward
+    reward = quaternion_reward * contact_reward
     
-    return total_reward, reward_dict
+    individual_rewards = {
+        "quaternion_reward": quaternion_reward,
+        "contact_reward": contact_reward,
+    }
+
+    return reward, individual_rewards

@@ -1,0 +1,4 @@
+- env=shadow_hand
+- sample=3
+- iteration=4
+- model=gpt-4-0314
